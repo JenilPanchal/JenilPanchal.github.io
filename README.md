@@ -1,91 +1,31 @@
-# Netrunner Terminal
+# Hey — here's my portfolio
 
-An interactive portfolio built as a command-line terminal, styled after
-Cyberpunk 2077. Visitors type commands to browse projects, skills, awards
-and contact links.
+### 👉 [jenilpanchal.github.io](https://jenilpanchal.github.io)
 
-Live at **[jenilpanchal.github.io](https://jenilpanchal.github.io)**.
+It's not a page you scroll. It's a terminal you talk to — type a command and
+it answers.
 
-## Running it
-
-Open `index.html`. No build step, no dependencies, no server.
-
-Append `?fast` to the URL to skip the boot sequence while editing.
-
-## Content
-
-All copy lives in `data.js` — identity, about, skills, projects, hackathons,
-experience, education and contact. Edit a string, save, reload. `index.html`,
-`style.css` and `script.js` never need to change to update content.
-
-Two counts are derived, not hardcoded: the `about` panel prints the length of
-the `projects` and `hackathons` arrays. The `role` line claims "7x", so that
-array is kept at seven entries.
-
-## Commands
-
-| Command | Does |
-|---|---|
-| `help` | lists every command |
-| `about` | ASCII panel, identity stats, bullet points |
-| `skills` | animated skill meters |
-| `projects` | every project as a card |
-| `project <id>` | one project — e.g. `project pinch` or `project 2` |
-| `hackathons` | competition record with links |
-| `experience` | work timeline |
-| `education` | degrees, certifications, languages |
-| `contact` | all links |
-| `open <name>` | opens a link directly — e.g. `open github` |
-| `resume` | opens the resume PDF in a new tab, plus a save-to-disk link |
-| `game` | playable Galaga in the terminal |
-| `breach` | Breach Protocol easter egg |
-| `clear`, `date`, `echo` | shell basics |
-
-A few more are hidden from `help`: `sudo`, `exit`, `hello`.
-
-## Interactions
-
-- **Tab** accepts the inline ghost suggestion
-- **↑ / ↓** walks command history
-- **Ctrl+L** clears the screen
-- Any keypress skips a running print animation
-- Clicking anywhere refocuses the prompt
-
-While `game` is running it takes over the keyboard — arrows move, space fires,
-Esc quits. On touch devices an on-screen pad appears under the canvas.
-
-## Palette
-
-Three accents, defined as CSS variables at the top of `style.css`:
-
-| Token | Used for |
-|---|---|
-| `--yellow` | headings, prompt, ASCII art, skill bars |
-| `--cyan` | links, values, terminal chrome |
-| `--pink` | award lines, section markers, skill percentages |
-
-Changing one token retints every element that uses it.
-
-## Files
-
-| File | What |
-|---|---|
-| `data.js` | all site content |
-| `index.html` | page structure |
-| `style.css` | theme, CRT effects, responsive rules |
-| `script.js` | terminal engine and command definitions |
-| `resume.pdf` | served by the `resume` command |
-| `steve-dev.jpg` | shown at the end of the `breach` easter egg |
-
-The PDF and the image are referenced by relative path, so all six files ship
-together.
-
-## Adding a command
-
-```js
-define("music", "what I listen to while coding", async () => {
-  await print([ head("NOW PLAYING"), "  Some synthwave, probably." ]);
-});
+```
+help          every command
+about         who I am
+projects      everything I've built
+skills        the stack I work in
+hackathons    competition wins
+experience    where I've worked
+education     degrees and certifications
+contact       how to reach me
+resume        my resume, as a PDF
+game          a round of Galaga, right in the terminal
 ```
 
-It appears in `help` and in Tab-completion automatically.
+There's an easter egg in there too. Have a poke around.
+
+---
+
+**Jenil Panchal** — Software Developer, Chicago IL
+[LinkedIn](https://linkedin.com/in/jenilpanchal) ·
+[GitHub](https://github.com/JenilPanchal) ·
+[jenil.panchal10@gmail.com](mailto:jenil.panchal10@gmail.com)
+
+<sub>Built with plain HTML, CSS and JavaScript — no framework, no build step.
+All content lives in `data.js`.</sub>
