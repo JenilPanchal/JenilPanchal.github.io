@@ -1,8 +1,78 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>JENIL PANCHAL // NETRUNNER TERMINAL</title>
+<meta name="description" content="Jenil Panchal — developer portfolio. A Cyberpunk 2077 style terminal. Type a command to begin." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<p>Hi it's my site</p>
-<img src="Data/steve dev.jpg" width="490" height="450">
+
+<!-- ============ BOOT SPLASH ============ -->
+<div id="boot">
+  <div id="boot-inner">
+    <pre id="boot-logo"></pre>
+    <div id="boot-log"></div>
+    <div id="boot-bar"><div id="boot-bar-fill"></div></div>
+    <div id="boot-press" hidden>[ PRESS ANY KEY TO JACK IN ]</div>
+  </div>
+</div>
+
+<!-- ============ MAIN SHELL ============ -->
+<div id="crt">
+  <div id="frame" class="hidden">
+
+    <!-- TOP BAR -->
+    <header id="topbar">
+      <div class="tb-left">
+        <span class="tb-glyph">◢</span>
+        <span class="tb-title glitch" data-text="JENIL.PANCHAL">JENIL.PANCHAL</span>
+        <span class="tb-sub">// PERSONAL PORTFOLIO</span>
+      </div>
+      <div class="tb-right">
+        <span class="tb-stat"><i>NET</i><b id="stat-net">ONLINE</b></span>
+        <span class="tb-stat"><i>RAM</i><b id="stat-ram">64%</b></span>
+        <span class="tb-stat"><i>SYS</i><b id="clock">--:--:--</b></span>
+      </div>
+      <div class="tb-stripe"></div>
+    </header>
+
+    <div id="main">
+
+      <!-- TERMINAL -->
+      <section id="terminal-wrap">
+        <div class="term-head">
+          <span class="th-dot"></span>
+          <span>root@chicago — /home/jenil</span>
+          <span class="th-badge">SECURE SHELL</span>
+        </div>
+
+        <!-- output AND the live prompt share one scrolling surface -->
+        <div id="terminal" tabindex="0" aria-live="polite">
+          <div id="inputline">
+            <span class="prompt" aria-hidden="true">jenil@chicago:~<b>$</b></span>
+            <span class="input-wrap">
+              <input id="cmdline" type="text" autocomplete="off" autocorrect="off"
+                     autocapitalize="off" spellcheck="false" aria-label="Terminal command input" />
+              <span id="ghost" aria-hidden="true"></span>
+              <span class="caret" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="flicker" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+</div>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
