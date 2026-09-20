@@ -37,6 +37,7 @@ array is kept at seven entries.
 | `contact` | all links |
 | `open <name>` | opens a link directly — e.g. `open github` |
 | `resume` | opens the resume PDF in a new tab, plus a save-to-disk link |
+| `game` | playable Galaga in the terminal |
 | `breach` | Breach Protocol easter egg |
 | `clear`, `date`, `echo` | shell basics |
 
@@ -49,6 +50,9 @@ A few more are hidden from `help`: `sudo`, `exit`, `hello`.
 - **Ctrl+L** clears the screen
 - Any keypress skips a running print animation
 - Clicking anywhere refocuses the prompt
+
+While `game` is running it takes over the keyboard — arrows move, space fires,
+Esc quits. On touch devices an on-screen pad appears under the canvas.
 
 ## Palette
 

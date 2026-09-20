@@ -312,6 +312,258 @@ define("breach", "run the breach protocol", async () => {
   ], 0);
 });
 
+/* ---- arcade ---- */
+/* Set while a game owns the keyboard, so the terminal stops grabbing focus
+   and stops treating arrow keys as history navigation. */
+let gameActive = false;
+
+define("game", "play a round of Galaga", async () => {
+  if (gameActive) return;
+
+  await print([
+    head("ARCADE // GALAGA"),
+    `  <span class="dim">← →</span> move &nbsp; <span class="dim">SPACE</span> fire &nbsp; <span class="dim">ESC</span> quit`,
+  ], 20);
+
+  const wrap = el(
+    `<div class="game-wrap">` +
+      `<canvas class="game-canvas" width="480" height="360"></canvas>` +
+      `<div class="game-pad">` +
+        `<button class="gp" data-k="left" aria-label="move left">◀</button>` +
+        `<button class="gp" data-k="fire" aria-label="fire">FIRE</button>` +
+        `<button class="gp" data-k="right" aria-label="move right">▶</button>` +
+      `</div>` +
+    `</div>`);
+
+  gameActive = true;
+  cmdline.blur();
+  const res = await runGalaga(wrap.querySelector("canvas"), wrap.querySelector(".game-pad"));
+  gameActive = false;
+  cmdline.focus();
+
+  await print([
+    `  <span class="yel">▸ FINAL SCORE ${res.score}</span> <span class="dim">· reached wave ${res.wave}</span>`,
+    res.score >= 3000
+      ? `  <span class="ok">▸ nice shooting, choom.</span>`
+      : `  <span class="dim">▸ run</span> <span class="yel">game</span> <span class="dim">to try again.</span>`,
+  ], 30);
+});
+
+/* A compact Galaga: a swaying formation, enemies that peel off and dive at
+   you, two bullets on screen at a time. Resolves when you quit or run out. */
+function runGalaga(canvas, pad){
+  return new Promise(resolve => {
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const YEL = "#fcee0a", CYAN = "#00f0ff", PINK = "#ff4d9d", RED = "#ff003c", BG = "#05060a";
+
+    const COLS = 8, ROWS = 4, SPX = 44, SPY = 30, MX = 46, MY = 46;
+
+    let score = 0, lives = 3, wave = 1, t = 0, raf = 0, over = 0, ended = false;
+    let bullets = [], eBullets = [], enemies = [], parts = [];
+    let dropped = 0, diveTimer = 80;
+
+    const player = { x: W / 2, y: H - 26, cool: 0, inv: 0 };
+    const stars = Array.from({ length: 70 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      s: Math.random() * 1.4 + 0.3, v: Math.random() * 0.5 + 0.15,
+    }));
+
+    function spawnWave(){
+      enemies = [];
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          enemies.push({ gx: c, gy: r, x: 0, y: 0, alive: true,
+                         kind: r === 0 ? 2 : r < 3 ? 1 : 0,
+                         state: "form", dt: 0, sx: 0, sy: 0, dir: 1 });
+      dropped = 0;
+    }
+    spawnWave();
+
+    const fx = e => MX + e.gx * SPX + Math.sin(t / 58) * 20;
+    const fy = e => MY + e.gy * SPY + dropped;
+
+    /* ---- input ---- */
+    const keys = {};
+    const GAME_KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Spacebar"];
+    function down(e){
+      if (GAME_KEYS.includes(e.key) || e.code === "Space"){ e.preventDefault(); e.stopPropagation(); }
+      if (e.key === "Escape" || e.key === "q" || e.key === "Q"){ e.preventDefault(); return finish(); }
+      keys[e.key === " " || e.code === "Space" ? "fire" : e.key] = true;
+    }
+    function up(e){ keys[e.key === " " || e.code === "Space" ? "fire" : e.key] = false; }
+    window.addEventListener("keydown", down, true);
+    window.addEventListener("keyup", up, true);
+
+    function padDown(e){ const k = e.target.dataset.k; if (k){ e.preventDefault(); keys[k] = true; } }
+    function padUp(e){ const k = e.target.dataset.k; if (k){ e.preventDefault(); keys[k] = false; } }
+    if (pad){
+      pad.addEventListener("pointerdown", padDown);
+      pad.addEventListener("pointerup", padUp);
+      pad.addEventListener("pointerleave", padUp);
+      pad.addEventListener("pointercancel", padUp);
+    }
+
+    function finish(){
+      if (ended) return;
+      ended = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", down, true);
+      window.removeEventListener("keyup", up, true);
+      if (pad) pad.remove();
+      resolve({ score, wave });
+    }
+
+    function boom(x, y, col){
+      for (let i = 0; i < 12; i++)
+        parts.push({ x, y, vx: (Math.random() - .5) * 3.4, vy: (Math.random() - .5) * 3.4, life: 26, col });
+    }
+
+    function hitPlayer(){
+      if (player.inv > 0) return;
+      lives--;
+      boom(player.x, player.y, YEL);
+      player.inv = 90;
+      eBullets = [];
+      if (lives <= 0) over = 110;
+    }
+
+    /* ---- update ---- */
+    function update(){
+      t++;
+      if (player.inv > 0) player.inv--;
+      if (player.cool > 0) player.cool--;
+
+      const speed = 3.2;
+      if (keys.ArrowLeft  || keys.left)  player.x -= speed;
+      if (keys.ArrowRight || keys.right) player.x += speed;
+      player.x = Math.max(14, Math.min(W - 14, player.x));
+
+      if (keys.fire && player.cool <= 0 && bullets.length < 2){
+        bullets.push({ x: player.x, y: player.y - 12 });
+        player.cool = 11;
+      }
+
+      bullets = bullets.filter(b => (b.y -= 7.5) > -10);
+      eBullets = eBullets.filter(b => (b.y += b.vy) < H + 10);
+      parts = parts.filter(p => { p.x += p.vx; p.y += p.vy; return --p.life > 0; });
+
+      /* send someone down */
+      if (--diveTimer <= 0 && !over){
+        const pool = enemies.filter(e => e.alive && e.state === "form");
+        if (pool.length){
+          const e = pool[(Math.random() * pool.length) | 0];
+          e.state = "dive"; e.dt = 0; e.sx = fx(e); e.sy = fy(e);
+          e.dir = Math.random() < .5 ? -1 : 1;
+        }
+        diveTimer = Math.max(26, 96 - wave * 9);
+      }
+
+      for (const e of enemies){
+        if (!e.alive) continue;
+        if (e.state === "form"){ e.x = fx(e); e.y = fy(e); continue; }
+
+        e.dt++;
+        const p = e.dt / 118;
+        e.y = e.sy + p * (H + 60);
+        e.x = e.sx + Math.sin(e.dt / 13) * 48 * e.dir + (player.x - e.sx) * p * 0.6;
+        if (e.dt % 30 === 0 && e.y < H - 70) eBullets.push({ x: e.x, y: e.y + 9, vy: 2.7 });
+        if (e.y > H + 40){ e.state = "form"; e.dt = 0; }
+      }
+
+      /* bullets vs enemies */
+      for (const b of bullets){
+        for (const e of enemies){
+          if (!e.alive || Math.abs(b.x - e.x) > 10 || Math.abs(b.y - e.y) > 8) continue;
+          e.alive = false; b.y = -99;
+          score += e.state === "dive" ? 100 : 50;
+          boom(e.x, e.y, e.kind === 2 ? YEL : e.kind === 1 ? CYAN : PINK);
+          break;
+        }
+      }
+      bullets = bullets.filter(b => b.y > -50);
+
+      if (!over){
+        for (const b of eBullets)
+          if (Math.abs(b.x - player.x) < 9 && Math.abs(b.y - player.y) < 9){ b.y = H + 99; hitPlayer(); }
+        for (const e of enemies)
+          if (e.alive && e.state === "dive" && Math.abs(e.x - player.x) < 13 && Math.abs(e.y - player.y) < 11){
+            e.alive = false; boom(e.x, e.y, PINK); hitPlayer();
+          }
+      }
+
+      /* formation creeps down, wave clears */
+      if (t % 150 === 0) dropped += 4;
+      if (enemies.every(e => !e.alive)){
+        wave++; score += 250; diveTimer = 70; spawnWave();
+      }
+      if (over && --over <= 0) finish();
+    }
+
+    /* ---- draw ---- */
+    function ship(x, y){
+      ctx.fillStyle = YEL;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 10); ctx.lineTo(x - 10, y + 8); ctx.lineTo(x - 3, y + 5);
+      ctx.lineTo(x + 3, y + 5); ctx.lineTo(x + 10, y + 8);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = CYAN; ctx.fillRect(x - 1.5, y - 5, 3, 7);
+    }
+    function bug(x, y, kind){
+      const col = kind === 2 ? YEL : kind === 1 ? CYAN : PINK;
+      ctx.fillStyle = col;
+      ctx.fillRect(x - 7, y - 5, 14, 9);
+      ctx.fillRect(x - 10, y - 1, 3, 6);
+      ctx.fillRect(x + 7, y - 1, 3, 6);
+      ctx.fillStyle = BG;
+      ctx.fillRect(x - 4, y - 3, 2, 3);
+      ctx.fillRect(x + 2, y - 3, 2, 3);
+    }
+    function draw(){
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = "rgba(120,160,180,.5)";
+      for (const s of stars){
+        s.y += s.v; if (s.y > H){ s.y = 0; s.x = Math.random() * W; }
+        ctx.fillRect(s.x, s.y, s.s, s.s);
+      }
+
+      for (const e of enemies) if (e.alive) bug(e.x, e.y, e.kind);
+
+      ctx.fillStyle = YEL;
+      for (const b of bullets) ctx.fillRect(b.x - 1, b.y - 8, 2, 9);
+      ctx.fillStyle = RED;
+      for (const b of eBullets) ctx.fillRect(b.x - 1.5, b.y - 5, 3, 7);
+
+      for (const p of parts){
+        ctx.globalAlpha = Math.max(0, p.life / 26);
+        ctx.fillStyle = p.col; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+
+      if (lives > 0 && (player.inv === 0 || (t >> 2) & 1)) ship(player.x, player.y);
+
+      ctx.font = "12px 'Share Tech Mono', ui-monospace, monospace";
+      ctx.textAlign = "left";  ctx.fillStyle = YEL;  ctx.fillText("SCORE " + score, 10, 18);
+      ctx.textAlign = "center"; ctx.fillStyle = CYAN; ctx.fillText("WAVE " + wave, W / 2, 18);
+      ctx.textAlign = "right"; ctx.fillStyle = PINK; ctx.fillText("LIVES " + Math.max(0, lives), W - 10, 18);
+
+      if (over){
+        ctx.fillStyle = "rgba(5,6,10,.8)"; ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = "center";
+        ctx.fillStyle = RED; ctx.font = "26px 'Share Tech Mono', ui-monospace, monospace";
+        ctx.fillText("GAME OVER", W / 2, H / 2 - 6);
+        ctx.fillStyle = YEL; ctx.font = "13px 'Share Tech Mono', ui-monospace, monospace";
+        ctx.fillText("SCORE " + score, W / 2, H / 2 + 20);
+      }
+      ctx.textAlign = "left";
+    }
+
+    function loop(){ update(); draw(); if (!ended) raf = requestAnimationFrame(loop); }
+    raf = requestAnimationFrame(loop);
+  });
+}
+
 /* ---- utility / fun ---- */
 define("clear", "wipe the screen", async () => {
   term.querySelectorAll(".line").forEach(n => n.remove());
@@ -391,6 +643,7 @@ function syncInput(){
 cmdline.addEventListener("input", syncInput);
 
 cmdline.addEventListener("keydown", async (e) => {
+  if (gameActive) return;
   /* skip a running animation */
   if (busy && e.key !== "Tab"){ flush = true; }
 
@@ -446,11 +699,13 @@ cmdline.addEventListener("keydown", async (e) => {
 
 /* clicking anywhere (or typing) focuses the prompt */
 document.addEventListener("click", (e) => {
+  if (gameActive) return;
   if (e.target.closest("a, button")) return;
   if (window.getSelection().toString()) return;
   cmdline.focus();
 });
 document.addEventListener("keydown", (e) => {
+  if (gameActive) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (document.activeElement !== cmdline && $("#boot").hidden) cmdline.focus();
 });

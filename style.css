@@ -288,6 +288,25 @@ a.link:hover{ color:var(--yellow); border-bottom-color:var(--yellow); background
 .crow{ display:flex; gap:12px; align-items:baseline; margin:3px 0; }
 .crow .cl{ color:var(--txt-dim); letter-spacing:.18em; font-size:11px; min-width:92px; }
 
+/* arcade */
+.game-wrap{ margin:10px 0 6px; white-space:normal; }
+.game-canvas{
+  display:block; width:min(480px,100%); height:auto;
+  border:1px solid var(--line); background:#05060a;
+  box-shadow:0 0 26px rgba(0,240,255,.13);
+  image-rendering:pixelated; touch-action:none;
+}
+/* on-screen controls only where there is no keyboard */
+.game-pad{ display:none; gap:8px; margin-top:8px; width:min(480px,100%); }
+.gp{
+  flex:1; padding:12px 0; cursor:pointer;
+  background:transparent; border:1px solid var(--line-c); color:var(--cyan);
+  font-family:var(--mono); font-size:14px; letter-spacing:.1em;
+  touch-action:none; user-select:none;
+}
+.gp:active{ background:var(--cyan); color:var(--bg); }
+@media (pointer:coarse){ .game-pad{ display:flex; } }
+
 /* the payoff image at the end of the breach sequence */
 .breach-img{
   display:block; width:min(320px,80%); height:auto;
