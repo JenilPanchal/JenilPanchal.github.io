@@ -204,7 +204,7 @@ const DATA = {
     { when: "AUG 2024 — PRESENT", what: "M.S. Computer Science",
       where: "Illinois Institute of Technology, Chicago IL", desc: "" },
     { when: "JUN 2020 — JUL 2024", what: "B.Tech Computer Science",
-      where: "Shri Vaishnav Vidyapeeth Vishwavidyalaya, Indore, India", desc: "GPA 3.2" },
+      where: "Shri Vaishnav Vidyapeeth Vishwavidyalaya, Indore, India", desc: "" },
   ],
 
   certifications: [
